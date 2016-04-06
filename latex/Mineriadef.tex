@@ -50,14 +50,14 @@
 %\affiliation{\textsuperscript{2}\textit{Universidad Politécnico Grancolombiano, Maestría en Ingeniería de Sistemas, Bogotá, Colombia}} % Author affiliation
 \affiliation{*\textbf{Correos de los autores}: jhonnycano@hotmail.com, jolarter@poligran.edu.co, henrysolarte@hotmail.com} % Corresponding author
 
-\Keywords{Modalidad Virtual --- Deserción --- Vista Minable} % Keywords - if you don't want any simply remove all the text between the curly brackets
+\Keywords{Modalidad Virtual, Deserción, Vista Minable, Minería de datos} % Keywords - if you don't want any simply remove all the text between the curly brackets
 \newcommand{\keywordname}{Keywords} % Defines the keywords heading name
 
 %----------------------------------------------------------------------------------------
 %	ABSTRACT
 %----------------------------------------------------------------------------------------
 
-\Abstract{En la actualidad la Institución Universitaria Politécnico Grancolombiano, oferta programas académicos a través de modalidad virtual, en esta modalidad de enseñanza hay una elevada tasa de deserción estudiantil; en este proyecto se utiliza la minería de datos como herramienta fundamental que puede contribuir a determinar las causas de deserción con el fin de adoptar mecanismos que disminuyan este fenómeno. Para lograr este objetivo se cuenta con diversos orígenes de datos suministrados por el claustro universitario, los cuales se depuran y preparan para su posterior utilización en una vista minable y luego se procesan mediante un aplicativo llamado RapidMiner. Los hallazgos encontrados arrojan causales comunes que llevan a la deserción estudiantil en modalidad virtual y brindan conocimiento básico y fundamental con miras a instituir procesos que eviten la deserción.}
+\Abstract{En la actualidad la Institución Universitaria Politécnico Grancolombiano, oferta programas académicos a través de modalidad virtual. En ésta modalidad de enseñanza hay una elevada tasa de deserción estudiantil; Se propone usar minería de datos como herramienta que puede contribuir a determinar las causas de deserción con el fin de adoptar mecanismos que disminuyan este fenómeno. Para lograr este objetivo se cuenta con diversos orígenes de datos suministrados por el claustro universitario, los cuales se depuran y preparan para su posterior utilización en una vista minable y luego se procesan mediante un aplicativo llamado RapidMiner. Los hallazgos encontrados arrojan causales comunes que llevan a la deserción estudiantil en modalidad virtual y brindan conocimiento básico y fundamental con miras a instituir procesos que eviten la deserción.}
 
 %----------------------------------------------------------------------------------------
 
@@ -129,7 +129,7 @@ Esto a su vez, permite mitigar este fenómeno derivando en un proceso académico
 
 %------------------------------------------------
 %\phantomsection
-\section{Procedimiento}
+\section{Preparación de datos}
 
 El Politécnico Grancolombiano recibe cada semestre un número significativo de estudiantes en sus programas académicos en modalidad presencial y virtual. 
 La tasa de permanencia de los estudiantes y su continuidad en esta institución, se calcula sobre las matrículas recibidas en cada semestre, versus las matrículas recibidas en el semestre anterior. A su vez, el complemento del indicador permanencia es el indicador de deserción, que presenta los siguientes datos históricos para los últimos cuatro años (siete periodos):  \\
@@ -201,7 +201,7 @@ En primer término, se individualizaron los registros de la tabla nota (tabla or
 
 Para el segundo paso, se tomó el identificador de los primeros tres periodos para cada estudiante (campos s1\_id, s2\_id, s3\_id); en caso que no lo estuviera, también era importante marcar dicho identificador como NULL;
 
-\section{Vista Minable}
+\section{Clustering}
 
 Una vez culminada la fase de extracción de datos para estudiantes, extracción de datos para notas y extracción de datos para matriculas, se creó una tabla que contiene la vista minable, esta tabla se llamó vista\_minable\_clustering y cuenta con un total de 38 campos que son indispensables para el estudio en relación.\\
 
@@ -393,8 +393,68 @@ Para los marcados como desertores en tercer semestre se identificaron los siguie
 	\item 30\% de notas mínimas segundo semestre en materias de economía
 \end{itemize}
 
+\section{Predicción usando árboles de decisión}
 
-\subsection{Conclusiones}
+Una vez analizado el conjunto de datos se puede observar diferencias importantes en los clusters obtenidos. Mediante la técnica de árboles de decisión se establece un mecanismo para identificar posibles candidatos a desertar. Teniendo en cuenta los datos se crean tres experimientos diferentes, cada uno con grupos de datos diferentes dependiendo de los estudiantes que desertan luego del primer semestre, los estudiantes que desertan luego del segundo semestre y los que desertan luego del tercero. \\
+
+Para preparar éste conjunto de datos se escogen únicamente aquellos estudiantes que desertaron luego del tercer semestre y se prepara el conjunto de datos con cerca de 2500 desertores, un número similar de graduados y alrededor de 10000 estudiantes activos. Se realiza un proceso de preparación de datos similar al modelo de clustering. \\
+
+\subsection{Estudiantes que desertan luego del tercer semestre}
+
+Para realizar el proceso de generación del árbol de decisión se usó el siguiente diagrama de procesos sobre la herramienta RapidMiner:
+
+\includegraphics[width=8cm]{img/tree1.png} \\ 
+
+Y específicamente el bloque de validación contendrá los siguientes elementos: 
+
+\includegraphics[width=8cm]{img/tree2.png} \\ 
+
+Los parámetros del bloque de validación (tipo split) se encuentran en la siguiente tabla. 
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+Parámetro & Valor \\
+\hline \hline
+Split & relative \\ \hline
+Split Ratio & 0.75 \\ \hline
+Sampling type & stratified sampling  \\ \hline
+criterion & gain ratio  \\ \hline
+maximal depth & 20  \\ \hline
+confidence & 0.25  \\ \hline
+minimal gain & 0.001  \\ \hline
+\end{tabular}
+\caption{Parámetros del bloque de validación.}
+\label{tabla:sencilla}
+\end{center}
+\end{table}
+
+En este proceso se usan 75 porciento de datos para entrenar el árbol de decisión y 25 porciento para realizar pruebas.\\
+
+El resultado final del árbol de decisión se presenta en la siguiente figura. 
+
+\includegraphics[width=8cm]{img/tree3.png} \\ 
+
+Debido a la uniformidad de los datos no se logró tener un árbol sino hasta el minimal gain de 0.001. Esto indica que hay muy pocas variables que realmente establecen relación de causa y aún así no hay buenos datos de decisión con la vista minable usada.\\
+
+Los resultados de clasificación para los datos de prueba con el árbol se extienden a continuación.
+
+\begin{verbatim}
+s3_nota_max_valor > 0.005: Activo 
+{Graduado=2558, Desertor=2476, Activo=9459}
+s3_nota_max_valor <= 0.005
+|   s1_nota_max_valor > 0.050
+|   |   s2_nota_min_aprobo > 0.500: Activo 
+        {Graduado=0, Desertor=6, Activo=15}
+|   |   s2_nota_min_aprobo <= 0.500: Desertor 
+        {Graduado=1, Desertor=79, Activo=36}
+|   s1_nota_max_valor <= 0.050: 
+    Activo {Graduado=2, Desertor=2, Activo=6}
+\end{verbatim}
+
+ 
+\section{Conclusiones}
 
 Es prudente en este punto informar al lector que los datos obtenidos del ejercicio de clustering, tanto el detalle como los prototipos detectados, se dejan en el repositorio público de github en la siguiente dirección:\\
 
